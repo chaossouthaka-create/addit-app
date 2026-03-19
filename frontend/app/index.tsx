@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { NumPad } from '../components/NumPad';
 import { getPin, savePin } from '../hooks/useStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 
 export default function PinScreen() {
@@ -75,7 +76,8 @@ export default function PinScreen() {
       try {
         await savePin(originalPin);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.replace('/(tabs)/home');
+        // Navigate to paywall after PIN creation
+        router.replace('/paywall');
       } catch (error) {
         setError('Error saving PIN');
         resetPin();
@@ -90,7 +92,14 @@ export default function PinScreen() {
   const validateLogin = async (enteredPin: string) => {
     if (enteredPin === savedPin) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace('/(tabs)/home');
+      
+      // Check if user has purchased
+      const purchased = await AsyncStorage.getItem('addit_purchased');
+      if (purchased === 'true') {
+        router.replace('/(tabs)/home');
+      } else {
+        router.replace('/paywall');
+      }
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setError('Wrong PIN');
